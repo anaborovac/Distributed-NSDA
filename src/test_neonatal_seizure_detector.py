@@ -17,8 +17,8 @@ def predict(device, model, data):
 	for t in range(0, n_batch, mini_batch):
 		t_end = min(t + mini_batch, n_batch)
 
-		tmp_data = data[t:t_end, :, :].to(device)
-		score = model.forward(tmp_data).detach().cpu().numpy()
+		data_segment = data[t:t_end, :, :].to(device)
+		score = model.forward(data_segment).detach().cpu().numpy()
 		probabilities = scipy.special.softmax(score, axis = 1)
 
 		p[t:t_end] = probabilities[:, 1]
