@@ -3,7 +3,7 @@ import torch
 import numpy as np
 import itertools
 
-from neonatal_seizure_detector import NSD 
+from nsd import NSD 
 
 
 def train(device, training_data, learning_rate = 0.001, step_size = 10, gamma = 0.5, epochs_n = 30):
