@@ -2,6 +2,7 @@
 import numpy as np 
 import mne
 import scipy.signal
+import pickle
 
 
 def channel_preprocessing(fs, data, low_cut = 0.5, high_cut = 32, fs_final = 32):
@@ -10,27 +11,26 @@ def channel_preprocessing(fs, data, low_cut = 0.5, high_cut = 32, fs_final = 32)
 	dum = scipy.signal.lfilter(b, a, data)
 	dum = scipy.signal.resample_poly(dum, fs_final, fs)
 
-	dum = [(200 if d > 200 else d) for d in dum]
-	dum = [(-200 if d < -200 else d) for d in dum]
-	dum = np.asarray(dum)
+	dum[dum > 200] = 200 
+	dum[dum < -200] = -200 
 
 	dum = dum / 400 * (2**16 - 1) + (2**15) + 0.5
 	
 	# uint16
-	dum = [(65535 if d > 65535 else d) for d in dum]
-	dum = [(0 if d < 0 else d) for d in dum]
+	dum[dum > 65535] = 65535
+	dum[dum < 0] = 0
 
 	fn = np.round(dum) - 32768
 
 	return fn
 
 
-def data_preprocessing(file_name, montage, segment_duration = 16, segment_overlap = 12, fs_final = 32):
+def data_preprocessing(file_name, montage, segment_duration = 16, segment_overlap = 12, fs_final = 32, save = True):
 
 	(active, reference) = montage
 
 	data = mne.io.read_raw_edf(f'../data/{file_name}', infer_types = True, exclude = ['EKG-REF', 'Effort-REF'])
-	raw_data = data.get_data()
+	raw_data = data.get_data(units = {'eeg': 'uV'})
 	channels = data.ch_names
 	fs = int(data.info['sfreq'])
 
@@ -38,7 +38,7 @@ def data_preprocessing(file_name, montage, segment_duration = 16, segment_overla
 	for i, (a, r) in enumerate(zip(active, reference)):
 		data_montage[i] = raw_data[channels.index(f'{a}-REF')] - raw_data[channels.index(f'{r}-REF')]
 
-	data_segments = np.empty((len(active), segment_duration * fs_final))
+	data_segments, time_stamps = [], []
 	step_size = (segment_duration - segment_overlap) * fs
 	final_point = data_montage.shape[1] - segment_duration * fs
 
@@ -47,8 +47,15 @@ def data_preprocessing(file_name, montage, segment_duration = 16, segment_overla
 
 		current_segment = data_montage[:, start_point:end_point]
 		preprocessed_segment = np.zeros((current_segment.shape[0], segment_duration * fs_final))
+		ignore = False
 		for channel in current_segment:
-			preprocessed_segment[i] = channel_preprocessing(fs, channel)
+			preprocessed_segment[i] = channel_preprocessing(fs, channel, fs_final = fs_final)
+			ignore = True if (channel.size - np.count_nonzero(channel)) > fs else ignore
+
+		if ignore: continue
+
+		data_segments.append(preprocessed_segment)
+		time_stamps.append(start_point / fs)
 
 	return data_segments
 

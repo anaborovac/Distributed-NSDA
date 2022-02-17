@@ -1,14 +1,7 @@
 
 import numpy as np
 
-
-def round_probabilities(x):
-
-	rounded_x = np.copy(x)
-	rounded_x[rounded_x >= 0.5] = 1 
-	rounded_x[rounded_x < 0.5] = 0
-
-	return rounded_x
+import aux_funcitons as AF
 
 
 def init_T(labels):
@@ -55,7 +48,7 @@ def calculate_log_likelihood(p, a, b):
 
 def run_dawid_skene(labels_p, epsilon = 1e-5, kmax = 5000):
 
-	labels = round_probabilities(labels_p)
+	labels = AF.round_probabilities(labels_p)
 	
 	T = init_T(labels_p) 
 	p = estimate_p(T)
