@@ -1,6 +1,7 @@
 
 import torch 
 import scipy.special
+import numpy as np
 
 
 def predict(device, model, data, mini_batch = 128):
@@ -15,7 +16,7 @@ def predict(device, model, data, mini_batch = 128):
 	for t in range(0, n_batch, mini_batch):
 		t_end = min(t + mini_batch, n_batch)
 
-		data_segment = data[t:t_end, :, :].to(device)
+		data_segment = torch.tensor(data[t:t_end, :, :]).float().to(device)
 		score = model(data_segment).detach().cpu().numpy()
 		probabilities = scipy.special.softmax(score, axis = 1)
 

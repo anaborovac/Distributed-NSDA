@@ -1,7 +1,7 @@
 
 import numpy as np
 
-import aux_funcitons as AF
+import aux_functions as AF
 
 
 def init_T(labels):

@@ -1,5 +1,7 @@
 data/*
+data_preprocessed/*
 !data/.gitkeep
+!data_preprocessed/.gitkeep
 
 *.DS_Store
 *.pt
