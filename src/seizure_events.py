@@ -1,6 +1,8 @@
 
 import numpy as np 
 
+import aux_functions as AF
+
 
 def merge_overlaps(s):
 
@@ -70,77 +72,25 @@ def intersection_seizures(s, additional_seizures):
 	return remove_empty_seizures(np.array(new_s))
 
 
-def calculate_sdr_fd(intersection_s, union_s, p, seconds = False):
+def get_seizure_intervals(time_stamps, interval_duration, overlap_duration, predictions, ignore_short = False):
 
-	detected_seizures, coverage_seizures = calculate_sdr(intersection_s, p)
-	detected_false_seizures, coverage_false_seizures = calculate_fd(union_s, p, seconds)
-
-	return {'TP': detected_seizures, 'TP_C': coverage_seizures, 'FP': detected_false_seizures, 'FP_C': coverage_false_seizures}
-
-
-def calculate_sdr(target_seizures, pred_seizures):
-
-	d_seizures = 0 # number of detected seizures
-	c_seizures_all = [] # coverage per seizure
-
-	if len(pred_seizures) == 0:
-		return 0, [0 for _ in range(len(target_seizures))]
-
-	for (s, e) in target_seizures:
-		tmp_pred = pred_seizures[np.logical_and( pred_seizures[:, 0] < e
-											   , pred_seizures[:, 1] > s)]
-		tmp_pred[tmp_pred[:, 0] < s, 0] = s
-		tmp_pred[tmp_pred[:, 1] > e, 1] = e
-
-		if tmp_pred.shape[0] != 0:
-			d_seizures += 1 
-			c_seizures_all += [np.sum(tmp_pred[:, 1] - tmp_pred[:, 0]) / (e-s)]
-		else:
-			c_seizures_all += [0]
-
-	return  d_seizures, c_seizures_all
-
-
-def calculate_fd(target_seizures, pred_seizures, seconds = False):
-
-	d_f_seizures = 0 # number of false detected seizures
-	c_f_seizures = [] # time of false detected seizures
-
-	second_1 = C.interval_end(0, 1, seconds)
-
-	if len(target_seizures) == 0:
-		return len(pred_seizures), [(e-s) / second_1 for (s, e) in pred_seizures]
-
-	for (s, e) in pred_seizures:
-		tmp_target = target_seizures[np.logical_and( target_seizures[:, 0] <= e
-											       , target_seizures[:, 1] >= s)]
-
-		if tmp_target.shape[0] == 0:
-			print(s, e)
-			d_f_seizures += 1 
-			c_f_seizures += [(e-s) / second_1] # /10**3 to get seconds
-
-	return  d_f_seizures, c_f_seizures
-
-
-def get_seizure_intervals(ts, pred, ignore_short = False, seconds = False):
+	time_stap = interval_duration - overlap_duration
 
 	P = dict()
-	for t in ts:
-		tmp_pred = pred[ts == t][0]
-		for tt in range(4):
-			k = C.interval_end(t, tt*4, seconds)
-			P.setdefault(k, [])
-			P[k] += [tmp_pred]
+	for t in time_stamps.astype(int):
+		pred_t = predictions[time_stamps == t][0]
+		for tt in range(t, t + interval_duration + 1, time_stap):
+			P.setdefault(tt, [])
+			P[tt] += [pred_t]
 
 	ts_small = list(P.keys())
 	ts_small.sort()
 
-	time_segments = DA.get_time_intervals(ts_small.copy(), 12, 16, seconds)
+	time_segments = np.split(ts_small, np.where(np.diff(ts_small) != time_stap)[0]+1)
 
 	pred_seizures = []
 	for tmp_ts in time_segments:
-		pred_final = np.round([np.mean(P[t]) for t in tmp_ts])
+		pred_final = AF.round_probabilities([np.mean(P[t]) for t in tmp_ts])
 
 		seizures_start = [tmp_ts[0]] if pred_final[0] == 1 else []
 		seizures_start += [tmp_ts[i] for i in range(1, len(pred_final)) if pred_final[i] == 1 and pred_final[i-1] == 0]
@@ -148,10 +98,10 @@ def get_seizure_intervals(ts, pred, ignore_short = False, seconds = False):
 		seizures_end = [tmp_ts[i] for i in range(0, len(pred_final)-1) if pred_final[i] == 1 and pred_final[i+1] == 0]
 		seizures_end += [tmp_ts[len(pred_final) - 1]] if pred_final[-1] == 1 else []
 
-		pred_seizures += [[s, C.interval_end(e, 4, seconds)] for (s, e) in zip(seizures_start, seizures_end)]
+		pred_seizures += [[s, e+4] for (s, e) in zip(seizures_start, seizures_end)]
 
 	if ignore_short:
-		min_duration = C.interval_end(0, 10, seconds)
+		min_duration = 10 # seconds
 		pred_seizures = [[s, e] for (s, e) in pred_seizures if (e - s) >= min_duration]
 
 	return  np.array(pred_seizures)

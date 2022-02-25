@@ -86,6 +86,7 @@ def data_preprocessing(pid, file_name, montage, segment_duration = 16, segment_o
 	raw_data = data.get_data(units = {'eeg': 'uV'})
 	channels = [c.replace('Ref', 'REF') for c in data.ch_names]
 	fs = int(data.info['sfreq'])
+	duration = raw_data.shape[1] / fs / 60 / 60 # in hours
 
 	data_montage = np.zeros((len(active), raw_data.shape[1]))
 	for i, (a, r) in enumerate(zip(active, reference)):
@@ -113,7 +114,7 @@ def data_preprocessing(pid, file_name, montage, segment_duration = 16, segment_o
 	union_seizures, intersection_seizures = get_seizures(pid)
 	y = get_labels(time_stamps, segment_duration, union_seizures, intersection_seizures)
 
-	D = {'Data': np.array(data_segments), 'TimeStamps': np.array(time_stamps), 'Y': y, 'Seizures_union': union_seizures, 'Seizures_intersection': intersection_seizures}
+	D = {'Data': np.array(data_segments), 'TimeStamps': np.array(time_stamps), 'Y': y, 'Seizures_union': union_seizures, 'Seizures_intersection': intersection_seizures, 'Duration': duration}
 
 	if save:
 		AF.save_data(file_name_preprocessed, D)
