@@ -5,6 +5,16 @@ import numpy as np
 
 
 def predict(device, model, data, mini_batch = 128):
+	"""
+	Prediction:
+		device - cuda or cpu
+		model - trained NSD
+		data - array of size (N, *) to be predicted
+		mini_batch - the amount of data predicted at the same time
+
+	Output:
+		array of size N with predicted probabbilities
+	"""
 	
 	model.eval()
 	model.to(device)
@@ -25,13 +35,3 @@ def predict(device, model, data, mini_batch = 128):
 	return p
 
 
-def example_run(model_name):
-
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
-	model = torch.load(model_name, map_location = torch.device('cpu')) 
-	
-	X = torch.rand(20, 18, 512)
-	p = predict(device, model, X)
-	print(p)
-
-# example_run('test_model.pt')

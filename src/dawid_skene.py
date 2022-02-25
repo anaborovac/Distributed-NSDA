@@ -46,15 +46,30 @@ def calculate_log_likelihood(p, a, b):
 	return np.sum(np.log(a * p + b * (1 - p)))
 
 
-def run_dawid_skene(labels_p, epsilon = 1e-5, kmax = 5000):
+def run_dawid_skene(probabilities, epsilon = 1e-5, kmax = 5000):
+	"""
+	Dawid, Alexander Philip, and Allan M. Skene. "Maximum likelihood estimation of observer error‐rates using the EM algorithm." Journal of the Royal Statistical Society: Series C (Applied Statistics) 28.1 (1979): 20-28.
 
-	labels = AF.round_probabilities(labels_p)
+	Parameters:
+		probabilities - array of size (N1, N2) with probabilities for N1 segments made by N2 scorers
+		epsilon - stopping critera
+		kmax - maximum number of interations
+
+	Output:
+		T - consensus labels estimated by the Dawid-Skene method
+		pi - array of size (N2, 2) with estimated specificity and sensitivity values for each scorer 
+		likelihood - value of log-likelihood function after convergence is reached or number of interation is equal to kmax
+		i - number of interation steps
+		diff - difference in log-likelihood of the last two steps
+	"""
+
+	labels = AF.round_probabilities(probabilities)
 	
-	T = init_T(labels_p) 
+	T = init_T(probabilities) 
 	p = estimate_p(T)
 	pi = estimate_pi(T, labels)
 	a, b = calculate_a_b(pi, labels)
-	l_old = calculate_log_likelihood(p, a, b)
+	likelihood_old = calculate_log_likelihood(p, a, b)
 	
 	i = 1
 
@@ -63,24 +78,18 @@ def run_dawid_skene(labels_p, epsilon = 1e-5, kmax = 5000):
 		p = estimate_p(T)
 		pi = estimate_pi(T, labels)
 		a, b = calculate_a_b(pi, labels)
-		l = calculate_log_likelihood(p, a, b)
+		likelihood_old = calculate_log_likelihood(p, a, b)
 		
-		diff = np.abs(l_old - l)
+		diff = np.abs(loss_old - likelihood_old)
 
 		if (diff < epsilon) or (i == kmax):
-			return T, pi, l, i, diff
+			return T, pi, likelihood_old, i, diff
 		
-		l_old = l.copy()
+		loss_old = likelihood_old.copy()
 		i += 1
 	
 
-def example_run(): 
 
-	n, n_expert = 100, 5
-
-	T, _, _, _, _ = run_dawid_skene(np.random.random(size = (n, n_expert)))
-
-	print(T.shape)
 	
 
 

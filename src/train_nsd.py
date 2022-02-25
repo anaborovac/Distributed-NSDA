@@ -6,7 +6,18 @@ from nsd import NSD
 
 
 def prepare_data(x, y, balance = True):
+	"""
+	Parameters:
+		x - array of size (N, *) of data to be predicted
+		y - array of size N with target values of data in x
+		balance - True if subsampling is applied to balance the classes
 
+	Output:
+		x - array with data
+		y - array with target values
+	"""
+
+	# ignore data with disagreements (y = 2)
 	x_train = x[y != 2]
 	y_train = y[y != 2]
 
@@ -50,6 +61,19 @@ def collate_fn(batch):
 
 
 def train(device, training_data, learning_rate = 0.001, step_size = 10, gamma = 0.5, epochs_n = 5, batch_size = 32):
+	""" 
+	Parameters:
+		device - cuda or cpu
+		training_data - training data
+		learning_rate - initial learning rate of the Adam optimiyer
+		step_size - scheduler step size
+		gamma - scheduler gamma 
+		epochs_n - number of epochs 
+		batch_size - batch size 
+
+	Output:
+		trained NSD
+	"""
 
 	model = NSD()
 	model.to(device) # send the model to the specified device
@@ -84,13 +108,5 @@ def train(device, training_data, learning_rate = 0.001, step_size = 10, gamma = 
 	return model
 
 
-def example_run(): 
 
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
-
-	n_batch, batch_size, n_channels = 3, 32, 18
-	X, y = torch.rand(n_batch, batch_size, n_channels, 512), torch.randint(2, (n_batch, batch_size))
-
-	m = train(device, zip(X, y))
-	torch.save(m, 'test_model.pt') 
 

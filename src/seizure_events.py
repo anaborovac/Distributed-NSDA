@@ -4,82 +4,122 @@ import numpy as np
 import aux_functions as AF
 
 
-def merge_overlaps(s):
+def merge_overlaps(intervals):
+	"""
+	Parameters:
+		intervals - array of size (N, 2) with time intervals
 
-	if s.shape[0] < 2:
-		return s
+	Output:
+		array of size (*, 2) in which no intervals overlap
+	"""
 
-	tmp_s = s.copy()
+	if intervals.shape[0] < 2:
+		return intervals
 
-	# sort events by starting time stamp
-	sorted_s = tmp_s[np.argsort(tmp_s[:, 0])]
+	# sort intervals by starting time stamp
+	sorted_intervals = intervals[np.argsort(intervals[:, 0])]
 
 	i = 1 
-	while i < sorted_s.shape[0]:
-		if sorted_s[i, 0] >= sorted_s[i-1, 0] and sorted_s[i, 0] <= sorted_s[i-1, 1]:
-			sorted_s[i-1, 1] = max(sorted_s[i, 1], sorted_s[i-1, 1])
-			sorted_s = np.delete(sorted_s, i, axis = 0)
+	while i < sorted_intervals.shape[0]:
+		if sorted_intervals[i, 0] >= sorted_intervals[i-1, 0] and sorted_intervals[i, 0] <= sorted_intervals[i-1, 1]:
+			# in case two consequtive intervals overlap
+			sorted_intervals[i-1, 1] = max(sorted_intervals[i, 1], sorted_intervals[i-1, 1])
+			sorted_intervals = np.delete(sorted_intervals, i, axis = 0)
 		else:
 			i += 1
 
-	return sorted_s
+	return sorted_intervals
 
 
-def remove_empty_seizures(s):
+def remove_empty_intervals(intervals):
+	"""
+	Parameters:
+		intervals - array of size (N, 2) with time intervals
+
+	Output:
+		array of size (*, 2) with no time intervals with duration 0
+	"""
 
 	if len(s) == 0:
 		return s
 
-	new_s = s.copy()
-	empy_seizures = np.where((new_s[:, 1] - new_s[:, 0]) == 0)[0]
-	new_s = np.delete(new_s, empy_seizures, axis = 0)
+	new_intervals = intervals.copy()
+	empy_intervals = np.where((intervals[:, 1] - intervals[:, 0]) == 0)[0]
+	new_intervals = np.delete(new_intervals, empy_seizures, axis = 0)
 
-	return new_s
+	return new_intervals
 
 
-def union_seizures(s, additional_seizures):
+def intervals_union(intervals_1, intervals_2):
+	"""
+	Parameters:
+		seizures - array of size (N1, 2) with seizure time intervals
+		additional_seizures - array of size (N2, 2) with seizure time intervals
 
-	if len(s) == 0:
-		return additional_seizures
+	Output:
+		array of shape (*, 2) with union intervals of input arrays
+	"""
 
-	new_s = np.copy(s)
-	for (start, end) in additional_seizures:
+	if len(intervals_1) == 0:
+		return intervals_2
 
-		c = np.logical_and( new_s[:, 0] < end
-						  , new_s[:, 1] > start)
+	union = np.copy(intervals_1)
+	for (start, end) in intervals_2:
 
-		i = np.where(c)[0][0] if new_s[c].shape[0] != 0 else None
+		c = np.logical_and(union[:, 0] < end, union[:, 1] > start)
 			
-		if i is not None:
-			new_s[i, 0] = min(new_s[i, 0], start)
-			new_s[i, 1] = max(new_s[i, 1], end)
+		if union[c].shape[0] != 0:
+			# in case of overlap, make a union of two intervals
+			i = np.where(c)[0][0]
+			union[i, 0] = min(union[i, 0], start)
+			union[i, 1] = max(union[i, 1], end)
 		else:
-			new_s = np.r_[new_s, [[start, end]]].reshape(-1, 2)
+			# in case there does not exist an overlap, just add the interval to the union
+			union = np.r_[union, [[start, end]]].reshape(-1, 2)
 
-	return remove_empty_seizures(merge_overlaps(new_s))
-
-
-def intersection_seizures(s, additional_seizures):
-
-	new_s = []
-	for (start, end) in s:
-
-		c = np.logical_and( additional_seizures[:, 0] <= end
-						  , additional_seizures[:, 1] >= start)
-
-		new_s += [[max(s, start), min(e, end)] for (s, e) in additional_seizures[c]]
-
-	return remove_empty_seizures(np.array(new_s))
+	return remove_empty_intervals(merge_overlaps(union))
 
 
-def get_seizure_intervals(time_stamps, interval_duration, overlap_duration, predictions, ignore_short = False):
+def intervals_intersection(intervals_1, intervals_2):
+	"""
+	Parameters:
+		seizures - array of size (N1, 2) with seizure time intervals
+		additional_seizures - array of size (N2, 2) with seizure time intervals
 
-	time_stap = interval_duration - overlap_duration
+	Output:
+		array of shape (*, 2) with intersection intervals of input arrays
+	"""
+
+	intersection = []
+	for (start, end) in intervals_1:
+
+		c = np.logical_and(intervals_2[:, 0] <= end, intervals_2[:, 1] >= start)
+
+		intersection += [[max(s, start), min(e, end)] for (s, e) in intervals_2[c]]
+
+	return remove_empty_intervals(np.array(intersection))
+
+
+def get_seizure_intervals(ts, segment_duration, segment_overlap, predictions, ignore_short = False):
+	"""
+	Parameters:
+		ts - array of size N with time stamps
+		segment_duration - duration of each segment in seconds
+		segment_overlap - overlap in seconds of two consequitve segments
+		predictions - array of size N with predictions
+		ignore_short - True if predicted seizures shorter than 10 seconds are not included in the output
+
+	Output:
+		array of size (*, 2) of time intervals where seizures are predicted
+	"""
+
+
+	time_stap = segment_duration - segment_overlap
 
 	P = dict()
-	for t in time_stamps.astype(int):
-		pred_t = predictions[time_stamps == t][0]
-		for tt in range(t, t + interval_duration + 1, time_stap):
+	for t in ts.astype(int):
+		pred_t = predictions[ts == t][0]
+		for tt in range(t, t + segment_duration + 1, time_stap):
 			P.setdefault(tt, [])
 			P[tt] += [pred_t]
 
@@ -89,16 +129,16 @@ def get_seizure_intervals(time_stamps, interval_duration, overlap_duration, pred
 	time_segments = np.split(ts_small, np.where(np.diff(ts_small) != time_stap)[0]+1)
 
 	pred_seizures = []
-	for tmp_ts in time_segments:
-		pred_final = AF.round_probabilities([np.mean(P[t]) for t in tmp_ts])
+	for time_seg in time_segments:
+		pred_final = AF.round_probabilities([np.mean(P[t]) for t in time_seg])
 
-		seizures_start = [tmp_ts[0]] if pred_final[0] == 1 else []
-		seizures_start += [tmp_ts[i] for i in range(1, len(pred_final)) if pred_final[i] == 1 and pred_final[i-1] == 0]
+		seizures_start = [time_seg[0]] if pred_final[0] == 1 else []
+		seizures_start += [time_seg[i] for i in range(1, len(pred_final)) if pred_final[i] == 1 and pred_final[i-1] == 0]
 
-		seizures_end = [tmp_ts[i] for i in range(0, len(pred_final)-1) if pred_final[i] == 1 and pred_final[i+1] == 0]
-		seizures_end += [tmp_ts[len(pred_final) - 1]] if pred_final[-1] == 1 else []
+		seizures_end = [time_seg[i] for i in range(0, len(pred_final)-1) if pred_final[i] == 1 and pred_final[i+1] == 0]
+		seizures_end += [time_seg[len(pred_final) - 1]] if pred_final[-1] == 1 else []
 
-		pred_seizures += [[s, e+4] for (s, e) in zip(seizures_start, seizures_end)]
+		pred_seizures += [[s, e + time_stap] for (s, e) in zip(seizures_start, seizures_end)]
 
 	if ignore_short:
 		min_duration = 10 # seconds

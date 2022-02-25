@@ -13,7 +13,6 @@ import metrics as M
 
 
 # 1) Data loading and preprocessing
-# In This example each patient represent one data set
 
 active = ['Fp2', 'F4', 'C4', 'P4', 'Fp1', 'F3', 'C3', 'P3', 'Fp2', 'F8', 'T4', 'T6', 'Fp1', 'F7', 'T3', 'T5', 'Fz', 'Cz'] 
 reference = ['F4', 'C4', 'P4', 'O2', 'F3', 'C3', 'P3', 'O1', 'F8', 'T4', 'T6', 'O2', 'F7', 'T3', 'T5', 'O1', 'Cz', 'Pz'] 
@@ -23,9 +22,10 @@ segment_overlap = 12
 
 data_1 = DP.data_preprocessing(1, 'eeg1.edf', (active, reference), segment_duration = segment_duration, segment_overlap = segment_overlap)
 data_2 = DP.data_preprocessing(4, 'eeg4.edf', (active, reference), segment_duration = segment_duration, segment_overlap = segment_overlap)
-data_3 = DP.data_preprocessing(5, 'eeg5.edf', (active, reference), segment_duration = segment_duration, segment_overlap = segment_overlap)
+data_3_1 = DP.data_preprocessing(5, 'eeg5.edf', (active, reference), segment_duration = segment_duration, segment_overlap = segment_overlap)
+data_3_2 = DP.data_preprocessing(7, 'eeg7.edf', (active, reference), segment_duration = segment_duration, segment_overlap = segment_overlap)
 
-data_test = DP.data_preprocessing(7, 'eeg7.edf', (active, reference), segment_duration = segment_duration, segment_overlap = segment_overlap)
+data_test = DP.data_preprocessing(9, 'eeg9.edf', (active, reference), segment_duration = segment_duration, segment_overlap = segment_overlap)
 
 
 # 2.1) Train the NSDs
@@ -38,11 +38,13 @@ model_1 = T.train(device, data_train_1)
 data_train_2 = T.prepare_data(data_2['Data'], data_2['Y'])
 model_2 = T.train(device, data_train_2)
 
-data_train_3_x, data_train_3_y = T.prepare_data(data_3['Data'], data_3['Y'])
-model_3 = T.train(device, (data_train_3_x, data_train_3_y))
+data_train_3 = T.prepare_data(np.r_[data_3_1['Data'], data_3_2['Data']], np.r_[data_3_1['Y'], data_3_2['Y']])
+model_3 = T.train(device, data_train_3)
 
 
 # 2.2) Train the Logistic regression classifier
+
+data_train_3_x, data_train_3_y = T.prepare_data(np.r_[data_3_1['Data'], data_3_2['Data']], np.r_[data_3_1['Y'], data_3_2['Y']], balance = False)
 
 data_train_3_lr = np.zeros((len(data_train_3_x), 2))
 data_train_3_lr[:, 0] = P.predict(device, model_1, data_train_3_x)
@@ -63,7 +65,7 @@ predictions_local[:, 2] = P.predict(device, model_3, data_test_x)
 
 predictions_mv = np.mean(AF.round_probabilities(predictions_local), axis = 1)
 predictions_mean = np.mean(predictions_local, axis = 1)
-predictions_wm = LR.predict_lr(lr, predictions_local[:, :2])
+predictions_wm = LR.predict_lr(lr, predictions_local[:, :2]) # do not include predictions from the third model
 predictions_ds, _, _, _, _ = DS.run_dawid_skene(predictions_local)
 
 
