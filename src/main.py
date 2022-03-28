@@ -12,10 +12,10 @@ active = ['Fp2', 'F4', 'C4', 'P4', 'Fp1', 'F3', 'C3', 'P3', 'Fp2', 'F8', 'T4', '
 reference = ['F4', 'C4', 'P4', 'O2', 'F3', 'C3', 'P3', 'O1', 'F8', 'T4', 'T6', 'O2', 'F7', 'T3', 'T5', 'O1', 'Cz', 'Pz'] 
 
 data_train_1 = data_preprocessing('eeg1.edf', (active, reference))
-data_train_2 = data_preprocessing('eeg1.edf', (active, reference))
-data_train_3 = data_preprocessing('eeg1.edf', (active, reference))
+data_train_2 = data_preprocessing('eeg4.edf', (active, reference))
+data_train_3 = data_preprocessing('eeg5.edf', (active, reference))
 
-data_test = data_preprocessing('eeg1.edf', (active, reference))
+data_test = data_preprocessing('eeg7.edf', (active, reference))
 
 
 # 2) Train the NSDs
