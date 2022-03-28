@@ -3,6 +3,12 @@ import torch
 
 
 class AttentionLayer(torch.nn.Module):
+	"""
+	D. Y. Isaev, D. Tchapyjnikov, C. M. Cotten, D. Tanaka, N. Martinez,
+	M. Bertran, G. Sapiro, and D. Carlson, “Attention-based network for
+	weak labels in neonatal seizure detection,” Proceedings of machine
+	learning research, vol. 126, p. 479, 2020.
+	"""
 
 	def __init__(self, size_in, size_inner):
 		super().__init__()
@@ -30,6 +36,12 @@ class AttentionLayer(torch.nn.Module):
 
 
 class NSD(torch.nn.Module):
+	"""
+	A. O’Shea, G. Lightbody, G. Boylan, and A. Temko, “Investigating the
+	impact of CNN depth on neonatal seizure detection performance,” in
+	2018 40th Annual International Conference of the IEEE Engineering in
+	Medicine and Biology Society (EMBC), pp. 5862–5865, IEEE, 2018
+	"""
 
 	def __init__(self):
 

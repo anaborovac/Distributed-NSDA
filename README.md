@@ -1,16 +1,16 @@
-# Distributed NSD
+
+# Distributed NSDA
+This repository contains supplementary material of the paper
+
+A. Borovac, S. Gudmundsson, G. Thorvardsson, S. M. Moghadam, P. Nevalainen, N. Stevenson, S. Vanhatalo, and T. P. Runarsson, “Ensemble learning using individual neonatal data for seizure detection,” submitted, 2022.
 
 ## Requirements 
 - Python >= 3.8
-- PyTorch 
+- PyTorch >= 1.7.1
 
-## Data 
-For the training, publicly available [data](https://zenodo.org/record/4940267#.Ybcah33P1hE) can be used. Load it into the `data` folder.
+## Example
+For running the code in [src/example.py](https://github.com/anaborovac/Distributed-NSD/blob/main/src/example.py), [download](https://zenodo.org/record/4940267#.Ybcah33P1hE) eeg1.edf, eeg4.edf, eeg5.edf, eeg7.edf, eeg9.edf, annotations_2017_A.csv, annotations_2017_B.csv and annotations_2017_C.csv. Save the file into the 'data' folder. 
 
-Nathan Stevenson, Karoliina Tapani, Leena Lauronen, & Sampsa Vanhatalo. (2018). A dataset of neonatal EEG recordings with seizures annotations [Data set]. Zenodo. https://doi.org/10.5281/zenodo.4940267
+N. J. Stevenson, K. Tapani, L. Lauronen, and S. Vanhatalo, “A dataset of neonatal EEG recordings with seizure annotations,” Scientific data, vol. 6, p. 190039, 2019.
 
-## Preprocessing
 
-## Training 
-
-## Testing
