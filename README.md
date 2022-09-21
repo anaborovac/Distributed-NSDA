@@ -2,7 +2,7 @@
 # Distributed neonatal seizure detection algorithm (NSDA)
 This repository contains supplementary material of the paper
 
-A. Borovac, S. Gudmundsson, G. Thorvardsson, S. M. Moghadam, P. Nevalainen, N. Stevenson, S. Vanhatalo, and T. P. Runarsson, “Ensemble learning using individual neonatal data for seizure detection,” submitted, 2022.
+A. Borovac, S. Gudmundsson, G. Thorvardsson, S. M. Moghadam, P. Nevalainen, N. Stevenson, S. Vanhatalo, and T. P. Runarsson, “Ensemble learning using individual neonatal data for seizure detection,” IEEE Journal of Translational Engineering in Health and Medicine, vol. 10, p 1-11, 2022.
 
 ## Requirements 
 - Python >= 3.8
