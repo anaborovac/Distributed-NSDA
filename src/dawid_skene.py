@@ -69,7 +69,7 @@ def run_dawid_skene(probabilities, epsilon = 1e-5, kmax = 5000):
 	p = estimate_p(T)
 	pi = estimate_pi(T, labels)
 	a, b = calculate_a_b(pi, labels)
-	likelihood_old = calculate_log_likelihood(p, a, b)
+	loss_old = calculate_log_likelihood(p, a, b)
 	
 	i = 1
 
